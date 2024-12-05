@@ -566,12 +566,12 @@ void viewavailabletickets() {
         return;
     }
 
-    int bookedSeats[100] = {0};  // Array to track booked seats for each bus (assuming max 100 buses)
+    int bookedSeats[10000] = {0};  // Array to track booked seats for each bus (assuming max 10000 buses)
 
     // Read reservations and mark booked seats
     char buffer[200];
-    while (fgets(buffer,sizeof(buffer),reservationfile)) {
-        if (sscanf(buffer,"%d,%[^,],%d,%d,%[^,\n]",
+    while (fgets(buffer, sizeof(buffer), reservationfile)) {
+        if (sscanf(buffer, "%d,%[^,],%d,%d,%[^,\n]",
                    &reservation.reservationid,
                    reservation.username,
                    &reservation.busid,
@@ -588,7 +588,7 @@ void viewavailabletickets() {
     printf("\nAvailable Tickets:\n");
     printf("--------------------------------------------------------\n");
 
-    // Read buses and display available seats with fare
+    // Read buses and display available seats with total fare
     while (fgets(buffer, sizeof(buffer), busfile)) {
         if (sscanf(buffer, "%d,%[^,],%[^,],%d",
                    &bus.busid,
@@ -600,20 +600,25 @@ void viewavailabletickets() {
             printf("Bus ID: %d | Company: %s | Type: %s | Total Seats: %d\n",
                    bus.busid, bus.company, bus.type, bus.seats);
 
-            // Calculate fare adjustment for AC buses
+            // Calculate total fare (adjusted fare for AC buses)
             float fareMultiplier = (strcmp(bus.type, "AC") == 0) ? 1.5 : 1.0;
-            float baseFare = 0.0;
+            float totalFare = 0.0;
 
             // Find corresponding route fare
             rewind(routefile);  // Reset file pointer for route file
+            int routeFound = 0;
             while (fgets(buffer, sizeof(buffer), routefile)) {
                 if (sscanf(buffer, "%d,%[^,],%[^,],%f",
                            &route.routeid, route.start, route.end, &route.fare) == 4) {
-                    baseFare = route.fare;
-                    printf("Base Fare: %.2f | Adjusted Fare: %.2f\n",
-                           baseFare, baseFare * fareMultiplier);
+                    totalFare = route.fare * fareMultiplier;
+                    printf("Total Fare: %.2f\n", totalFare);
+                    routeFound = 1;
                     break;
                 }
+            }
+
+            if (!routeFound) {
+                printf("No corresponding route found for this bus.\n");
             }
 
             printf("Available Seats: ");
